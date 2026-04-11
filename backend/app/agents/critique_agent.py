@@ -79,13 +79,27 @@ Provide your evaluation with SCORE and FEEDBACK."""
             }
 
         if score < 7:
-            # Needs refinement
+            # Check if next iteration would exceed max
+            next_iteration = iteration_count + 1
+            if next_iteration >= 2:
+                # Would exceed max iterations, finalize instead
+                agent_logs.append(
+                    f"Critique Agent: Score below threshold but next iteration would be {next_iteration}, finalizing"
+                )
+                return {
+                    "critique": critique,
+                    "final_report": draft_report,
+                    "iteration_count": next_iteration,
+                    "agent_logs": agent_logs,
+                }
+
+            # Needs refinement and under max iterations
             agent_logs.append(
                 f"Critique Agent: Score below threshold (7), requesting refinement"
             )
             return {
                 "critique": critique,
-                "iteration_count": iteration_count + 1,
+                "iteration_count": next_iteration,
                 "agent_logs": agent_logs,
             }
 
