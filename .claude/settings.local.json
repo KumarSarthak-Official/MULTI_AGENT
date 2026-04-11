@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv init:*)",
+      "Bash(uv venv:*)",
+      "Bash(uv add:*)",
+      "WebSearch",
+      "Bash(docker-compose up:*)",
+      "Bash(winget install:*)",
+      "Bash(podman machine:*)",
+      "Bash(.venv/Scripts/python.exe -c \"import fastapi, langchain, langgraph; print\\('✓ All imports work'\\)\")",
+      "Bash(.venv/Scripts/python.exe -c \"import fastapi, langchain, langgraph; print\\('All imports work successfully'\\)\")"
+    ]
+  }
+}
