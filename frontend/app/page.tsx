@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useResearchStream } from "@/hooks/useResearchStream";
 import { AgentTimeline } from "@/components/AgentTimeline";
 import { StreamingReport } from "@/components/StreamingReport";
+import { DocumentUpload } from "@/components/DocumentUpload";
 
 export default function Home() {
   const [query, setQuery] = useState("");
+  const [showUpload, setShowUpload] = useState(false);
   const { report, agentLogs, status, error, startResearch } =
     useResearchStream();
 
@@ -53,6 +55,26 @@ export default function Home() {
               </button>
             </div>
           </form>
+        </div>
+
+        {/* Document Upload Section */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Upload Documents (Optional)</h2>
+            <button
+              onClick={() => setShowUpload(!showUpload)}
+              className="text-sm text-blue-600 hover:text-blue-700"
+            >
+              {showUpload ? "Hide" : "Show"}
+            </button>
+          </div>
+          {showUpload && (
+            <DocumentUpload
+              onUploadSuccess={(result) => {
+                console.log("Upload successful:", result);
+              }}
+            />
+          )}
         </div>
 
         {/* Agent Timeline */}
