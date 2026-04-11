@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useResearchStream } from "@/hooks/useResearchStream";
+import { AgentTimeline } from "@/components/AgentTimeline";
+import { StreamingReport } from "@/components/StreamingReport";
 
 export default function Home() {
   const [query, setQuery] = useState("");
@@ -53,17 +55,11 @@ export default function Home() {
           </form>
         </div>
 
-        {/* Agent Logs */}
-        {agentLogs.length > 0 && (
+        {/* Agent Timeline */}
+        {status !== "idle" && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-4">Agent Activity</h2>
-            <div className="space-y-1 max-h-64 overflow-y-auto">
-              {agentLogs.map((log, i) => (
-                <div key={i} className="text-sm text-gray-700 font-mono">
-                  {log}
-                </div>
-              ))}
-            </div>
+            <h2 className="text-xl font-semibold mb-4">Agent Progress</h2>
+            <AgentTimeline agentLogs={agentLogs} status={status} />
           </div>
         )}
 
@@ -77,22 +73,7 @@ export default function Home() {
         {/* Research Report */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4">Research Report</h2>
-          {status === "idle" && (
-            <p className="text-gray-500">
-              Submit a research topic to see results here...
-            </p>
-          )}
-          {status === "running" && (
-            <div className="flex items-center gap-2 text-blue-600">
-              <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-              <span>Agents are working on your research...</span>
-            </div>
-          )}
-          {status === "done" && report && (
-            <div className="prose max-w-none">
-              <pre className="whitespace-pre-wrap text-sm">{report}</pre>
-            </div>
-          )}
+          <StreamingReport report={report} status={status} />
         </div>
       </div>
     </main>
