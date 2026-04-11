@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.config import settings
 from app.tools.vector_store import vector_store
-from app.api.routes import health, research
+from app.api.routes import health, research, documents
 
 
 @asynccontextmanager
@@ -45,6 +45,7 @@ app.add_middleware(
 # Include routers
 app.include_router(health.router, prefix="/api/v1", tags=["health"])
 app.include_router(research.router, prefix="/api/v1", tags=["research"])
+app.include_router(documents.router, prefix="/api/v1", tags=["documents"])
 
 
 @app.get("/")
