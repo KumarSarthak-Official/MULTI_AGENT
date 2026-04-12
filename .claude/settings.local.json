@@ -28,7 +28,12 @@
       "Bash(bun create:*)",
       "Bash(bun install:*)",
       "Bash(bun dev:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(docker --version)",
+      "Bash(uv --version)",
+      "Bash(bun --version)",
+      "Bash(awk '{print $2}')"
     ]
   }
 }

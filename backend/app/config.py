@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     OLLAMA_API_KEY: str
 
     # Models
-    LLM_MODEL: str = "qwen3.5"
+    LLM_MODEL: str = "deepseek-v3.2"
     EMBED_MODEL: str = "nomic-embed-text"
 
     # API
