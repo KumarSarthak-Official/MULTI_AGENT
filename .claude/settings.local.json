@@ -33,7 +33,8 @@
       "Bash(docker --version)",
       "Bash(uv --version)",
       "Bash(bun --version)",
-      "Bash(awk '{print $2}')"
+      "Bash(awk '{print $2}')",
+      "Bash(ls:*)"
     ]
   }
 }
