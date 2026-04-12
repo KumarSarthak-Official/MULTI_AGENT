@@ -6,10 +6,20 @@ import uuid
 
 
 class VectorStore:
-    """Qdrant vector store operations."""
+    """Qdrant vector store operations with support for both local and cloud."""
 
     def __init__(self):
-        self.client = QdrantClient(url=settings.QDRANT_URL)
+        # Support both local Qdrant and Qdrant Cloud
+        if settings.QDRANT_API_KEY:
+            # Qdrant Cloud with API key authentication
+            self.client = QdrantClient(
+                url=settings.QDRANT_URL,
+                api_key=settings.QDRANT_API_KEY,
+            )
+        else:
+            # Local Qdrant without authentication
+            self.client = QdrantClient(url=settings.QDRANT_URL)
+
         self.collection_name = "research_docs"
 
     def ensure_collection(self):

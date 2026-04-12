@@ -1,11 +1,13 @@
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, SystemMessage
 from app.config import settings
+from app.services.cache_service import cache_service
 import os
+import hashlib
 
 
 class LLMService:
-    """Wrapper for Ollama Cloud LLM interactions."""
+    """Wrapper for Ollama Cloud LLM interactions with caching."""
 
     def __init__(self):
         # Set API key as environment variable for langchain-ollama
@@ -17,23 +19,43 @@ class LLMService:
             temperature=0.7,
         )
 
-    def generate(self, prompt: str, system_prompt: str = None) -> str:
-        """Generate text from a prompt.
+    def _generate_cache_key(self, prompt: str, system_prompt: str = None) -> str:
+        """Generate cache key from prompt."""
+        content = f"{system_prompt or ''}:{prompt}:{settings.LLM_MODEL}"
+        return f"llm:{hashlib.md5(content.encode()).hexdigest()}"
+
+    def generate(self, prompt: str, system_prompt: str = None, use_cache: bool = True) -> str:
+        """Generate text from a prompt with optional caching.
 
         Args:
             prompt: User prompt
             system_prompt: Optional system prompt for context
+            use_cache: Whether to use cache (default True)
 
         Returns:
             Generated text response
         """
+        # Check cache first
+        if use_cache:
+            cache_key = self._generate_cache_key(prompt, system_prompt)
+            cached = cache_service.get(cache_key)
+            if cached:
+                return cached
+
+        # Generate response
         messages = []
         if system_prompt:
             messages.append(SystemMessage(content=system_prompt))
         messages.append(HumanMessage(content=prompt))
 
         response = self.llm.invoke(messages)
-        return response.content
+        result = response.content
+
+        # Cache the result (1 hour TTL)
+        if use_cache:
+            cache_service.set(cache_key, result, ttl=3600)
+
+        return result
 
     def generate_queries(self, topic: str, num_queries: int = 3) -> list[str]:
         """Generate diverse search queries for a research topic.

@@ -12,6 +12,7 @@ class Settings(BaseSettings):
 
     # Qdrant
     QDRANT_URL: str = "http://localhost:6333"
+    QDRANT_API_KEY: str = ""  # Optional for local, required for Qdrant Cloud
 
     # Ollama Cloud
     OLLAMA_CLOUD_URL: str = "https://api.ollama.com"
