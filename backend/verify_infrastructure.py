@@ -5,18 +5,25 @@ Tests connectivity to PostgreSQL, Qdrant, and Redis
 """
 
 import sys
+import os
+
+# Fix Windows console encoding
+if sys.platform == 'win32':
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+
 from app.config import settings
 
 def test_postgresql():
     """Test PostgreSQL connection."""
     try:
         from app.models import engine
+        from sqlalchemy import text
         with engine.connect() as conn:
-            result = conn.execute("SELECT 1")
-            print("✅ PostgreSQL: Connected successfully")
+            result = conn.execute(text("SELECT 1"))
+            print("[OK] PostgreSQL: Connected successfully")
             return True
     except Exception as e:
-        print(f"❌ PostgreSQL: Connection failed - {e}")
+        print(f"[FAIL] PostgreSQL: Connection failed - {e}")
         return False
 
 def test_qdrant():
@@ -24,11 +31,11 @@ def test_qdrant():
     try:
         from app.tools.vector_store import vector_store
         vector_store.ensure_collection()
-        print("✅ Qdrant: Connected successfully")
-        print(f"   Collection: {vector_store.collection_name}")
+        print("[OK] Qdrant: Connected successfully")
+        print(f"     Collection: {vector_store.collection_name}")
         return True
     except Exception as e:
-        print(f"❌ Qdrant: Connection failed - {e}")
+        print(f"[FAIL] Qdrant: Connection failed - {e}")
         return False
 
 def test_redis():
@@ -36,7 +43,7 @@ def test_redis():
     try:
         from app.services.cache_service import cache_service
         if not cache_service.enabled:
-            print("⚠️  Redis: Not configured (caching disabled)")
+            print("[WARN] Redis: Not configured (caching disabled)")
             return False
 
         # Test set/get
@@ -46,13 +53,13 @@ def test_redis():
         cache_service.delete(test_key)
 
         if value == "test_value":
-            print("✅ Redis: Connected successfully")
+            print("[OK] Redis: Connected successfully")
             return True
         else:
-            print("❌ Redis: Connection test failed")
+            print("[FAIL] Redis: Connection test failed")
             return False
     except Exception as e:
-        print(f"❌ Redis: Connection failed - {e}")
+        print(f"[FAIL] Redis: Connection failed - {e}")
         return False
 
 def main():
@@ -76,7 +83,7 @@ def main():
     total = len(results)
 
     for service, status in results.items():
-        status_icon = "✅" if status else "❌"
+        status_icon = "[OK]" if status else "[FAIL]"
         print(f"{status_icon} {service}")
 
     print()
@@ -84,12 +91,12 @@ def main():
 
     if passed == total:
         print()
-        print("🎉 All services are ready!")
+        print("SUCCESS: All services are ready!")
         print("You can now start the application.")
         return 0
     else:
         print()
-        print("⚠️  Some services are not connected.")
+        print("WARNING: Some services are not connected.")
         print("Please check INFRASTRUCTURE_SETUP.md for setup instructions.")
         return 1
 

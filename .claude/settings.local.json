@@ -34,7 +34,9 @@
       "Bash(uv --version)",
       "Bash(bun --version)",
       "Bash(awk '{print $2}')",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(ping -n 2 db.dywstsndhmvoyipomdgn.supabase.co)",
+      "Bash(nslookup db.dywstsndhmvoyipomdgn.supabase.co)"
     ]
   }
 }
