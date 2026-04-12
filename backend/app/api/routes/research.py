@@ -131,12 +131,13 @@ def format_sse_event(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
 
-@router.post("/research/stream")
-async def stream_research(request: ResearchRequest):
+@router.get("/research/stream")
+async def stream_research(query: str, use_documents: bool = True):
     """Stream research execution via Server-Sent Events.
 
     Args:
-        request: Research request with query and options
+        query: Research topic or question
+        use_documents: Whether to use RAG document retrieval
 
     Returns:
         StreamingResponse with SSE events
@@ -144,7 +145,7 @@ async def stream_research(request: ResearchRequest):
     research_id = str(uuid.uuid4())
 
     return StreamingResponse(
-        generate_sse_events(research_id, request.query, request.use_documents),
+        generate_sse_events(research_id, query, use_documents),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

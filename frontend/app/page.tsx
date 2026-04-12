@@ -15,7 +15,7 @@ export default function Home() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      startResearch(query, false); // Set to false for now since Qdrant isn't running
+      startResearch(query, true); // Enable document retrieval
     }
   };
 

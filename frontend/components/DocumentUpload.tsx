@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_URL } from "@/lib/config";
 
 interface DocumentUploadProps {
   onUploadSuccess?: (result: any) => void;
@@ -54,7 +55,7 @@ export function DocumentUpload({ onUploadSuccess }: DocumentUploadProps) {
       formData.append("source_name", file.name.replace(".pdf", ""));
 
       const response = await fetch(
-        "http://localhost:8001/api/v1/documents/upload",
+        `${API_URL}/api/v1/documents/upload`,
         {
           method: "POST",
           body: formData,

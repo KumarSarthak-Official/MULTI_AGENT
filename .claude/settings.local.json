@@ -9,7 +9,26 @@
       "Bash(winget install:*)",
       "Bash(podman machine:*)",
       "Bash(.venv/Scripts/python.exe -c \"import fastapi, langchain, langgraph; print\\('✓ All imports work'\\)\")",
-      "Bash(.venv/Scripts/python.exe -c \"import fastapi, langchain, langgraph; print\\('All imports work successfully'\\)\")"
+      "Bash(.venv/Scripts/python.exe -c \"import fastapi, langchain, langgraph; print\\('All imports work successfully'\\)\")",
+      "Bash(.venv/Scripts/python.exe -c \"from app.agents.state import ResearchState; from app.config import settings; print\\('State and config imported successfully'\\)\")",
+      "Bash(.venv/Scripts/python.exe test_search_standalone.py)",
+      "Bash(.venv/Scripts/python.exe -m pip uninstall -y duckduckgo-search)",
+      "Bash(.venv/Scripts/python.exe -m pip install ddgs)",
+      "Bash(uv remove:*)",
+      "Bash(.venv/Scripts/python.exe test_rag_standalone.py)",
+      "Bash(podman-compose up:*)",
+      "Bash(docker-compose:*)",
+      "Bash(.venv/Scripts/python.exe test_synthesis_critique_standalone.py)",
+      "Bash(.venv/Scripts/python.exe test_graph_e2e.py)",
+      "Bash(echo \"# API routes package\")",
+      "Bash(echo \"# Routes package\")",
+      "Bash(.venv/Scripts/python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload)",
+      "Bash(curl:*)",
+      "Bash(.venv/Scripts/python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload)",
+      "Bash(bun create:*)",
+      "Bash(bun install:*)",
+      "Bash(bun dev:*)",
+      "Bash(git add:*)"
     ]
   }
 }

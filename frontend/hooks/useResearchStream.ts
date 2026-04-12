@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { API_URL } from "@/lib/config";
 
 type ResearchStatus = "idle" | "running" | "done" | "error";
 
@@ -26,7 +27,7 @@ export function useResearchStream(): UseResearchStreamReturn {
 
       // Create EventSource connection
       const eventSource = new EventSource(
-        `http://localhost:8001/api/v1/research/stream?${new URLSearchParams({
+        `${API_URL}/api/v1/research/stream?${new URLSearchParams({
           query,
           use_documents: String(useDocuments),
         })}`
