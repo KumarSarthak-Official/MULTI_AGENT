@@ -35,10 +35,10 @@ Entry → Search Agent → RAG Agent → Synthesis Agent → Critique Agent
 
 **Backend:**
 - FastAPI with SSE streaming (`/api/v1/research/stream`)
-- LangGraph 0.1.0 + LangChain 0.2.0
+- LangGraph 1.1.6 + LangChain 1.2.15
 - Qdrant vector database (768-dim nomic-embed-text embeddings)
-- Ollama Cloud API (qwen3.5 LLM + nomic-embed-text embeddings) - no local GPU needed
-- PostgreSQL (report metadata), Redis (Celery broker)
+- Ollama Cloud API (deepseek-v3.2 or qwen3.5 LLM + nomic-embed-text embeddings) - no local GPU needed
+- PostgreSQL (report metadata), Redis (cache/broker)
 - Python 3.11 managed by `uv` (not pip)
 
 **Frontend:**
@@ -63,7 +63,7 @@ uv venv && source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 uv sync  # installs from uv.lock
 
 # Run development server
-uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 
 # Run tests
 uv run pytest tests/ -v --cov=app
@@ -116,7 +116,7 @@ docker-compose down -v
 
 **Access Points:**
 - Frontend: http://localhost:3000
-- API Swagger: http://localhost:8000/docs
+- API Swagger: http://localhost:8001/docs
 - Qdrant Dashboard: http://localhost:6333/dashboard
 
 ## Key Technical Patterns
@@ -154,7 +154,7 @@ Set these environment variables (not local Ollama):
 ```
 OLLAMA_CLOUD_URL=https://api.ollama.com
 OLLAMA_API_KEY=ollama_xxxxx  # from ollama.com dashboard
-LLM_MODEL=qwen3.5
+LLM_MODEL=deepseek-v3.2  # or qwen3.5
 EMBED_MODEL=nomic-embed-text
 ```
 
@@ -207,13 +207,15 @@ Payload structure per chunk:
 
 Required in `.env` (see `.env.example`):
 ```
-DATABASE_URL=postgresql://user:password@localhost:5432/research_db
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/research_db
 REDIS_URL=redis://localhost:6379
 QDRANT_URL=http://localhost:6333
+QDRANT_API_KEY=  # Optional for local, required for Qdrant Cloud
 OLLAMA_CLOUD_URL=https://api.ollama.com
-OLLAMA_API_KEY=ollama_xxxxx
-LLM_MODEL=qwen3.5
+OLLAMA_API_KEY=ollama_your_key_here
+LLM_MODEL=deepseek-v3.2
 EMBED_MODEL=nomic-embed-text
+CORS_ORIGINS=http://localhost:3000
 ```
 
 ## Project Structure Philosophy
@@ -222,7 +224,8 @@ EMBED_MODEL=nomic-embed-text
 - `backend/app/tools/` - Reusable utilities (web search, PDF reader, vector store ops)
 - `backend/app/services/` - LLM/embedding wrappers, report persistence
 - `backend/app/api/routes/` - FastAPI endpoints (research, documents, health)
-- `frontend/src/components/` - React components (AgentTimeline, StreamingReport, DocumentUpload)
-- `frontend/src/app/` - Next.js App Router pages
+- `frontend/components/` - React components (AgentTimeline, StreamingReport, DocumentUpload)
+- `frontend/app/` - Next.js App Router pages
+- `frontend/hooks/` - Custom React hooks (useResearchStream for SSE)
 
 State flows through the graph; agents are pure functions that take `ResearchState` and return updated state.

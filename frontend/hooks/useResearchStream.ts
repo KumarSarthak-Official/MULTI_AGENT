@@ -34,13 +34,13 @@ export function useResearchStream(): UseResearchStreamReturn {
       );
 
       // Handle different event types
-      eventSource.addEventListener("start", (event) => {
-        const data = JSON.parse(event.data);
+      eventSource.addEventListener("start", (event: Event) => {
+        const data = JSON.parse((event as MessageEvent).data);
         console.log("Research started:", data);
       });
 
-      eventSource.addEventListener("node_complete", (event) => {
-        const data = JSON.parse(event.data);
+      eventSource.addEventListener("node_complete", (event: Event) => {
+        const data = JSON.parse((event as MessageEvent).data);
         const { node, logs } = data;
 
         // Add logs to state
@@ -48,8 +48,8 @@ export function useResearchStream(): UseResearchStreamReturn {
         console.log(`${node} completed:`, logs);
       });
 
-      eventSource.addEventListener("complete", (event) => {
-        const data = JSON.parse(event.data);
+      eventSource.addEventListener("complete", (event: Event) => {
+        const data = JSON.parse((event as MessageEvent).data);
         const { final_report } = data;
 
         setReport(final_report);
@@ -58,8 +58,8 @@ export function useResearchStream(): UseResearchStreamReturn {
         console.log("Research complete:", data);
       });
 
-      eventSource.addEventListener("error", (event) => {
-        const data = JSON.parse(event.data);
+      eventSource.addEventListener("error", (event: Event) => {
+        const data = JSON.parse((event as MessageEvent).data);
         setError(data.message);
         setStatus("error");
         eventSource.close();
