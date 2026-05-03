@@ -10,7 +10,7 @@ def should_refine(state: ResearchState) -> str:
     """Conditional edge function to decide if report needs refinement.
 
     Logic:
-    - If iterations >= 2: END (max iterations reached)
+    - If iterations >= 2: END (max 1 refinement cycle reached)
     - If score < 7: return "synthesis" (trigger refinement)
     - Otherwise: END (score is good)
 
@@ -24,7 +24,7 @@ def should_refine(state: ResearchState) -> str:
     score = critique.get("score", 10)
     iteration_count = state.get("iteration_count", 0)
 
-    # Check if max iterations reached
+    # Check if max refinements reached (1 cycle = iteration_count 2)
     if iteration_count >= 2:
         # Ensure final_report is set
         if not state.get("final_report"):
@@ -41,19 +41,35 @@ def should_refine(state: ResearchState) -> str:
     return END
 
 
+def should_run_rag(state: ResearchState) -> str:
+    """Conditional edge after search: skip RAG if use_documents is False.
+
+    Args:
+        state: Current ResearchState
+
+    Returns:
+        "rag" to run RAG agent, or "synthesis" to skip it
+    """
+    if state.get("use_documents", True):
+        return "rag"
+    return "synthesis"
+
+
 def build_research_graph():
     """Build the LangGraph StateGraph for the research pipeline.
 
     The graph orchestrates 4 agents:
     1. Search Agent - Web search via DuckDuckGo
-    2. RAG Agent - Document retrieval from Qdrant
+    2. RAG Agent - Document retrieval from Qdrant (conditional)
     3. Synthesis Agent - Combine sources into report
     4. Critique Agent - Evaluate and refine (LLM-as-Judge)
 
     Graph flow:
-    Entry → search → rag → synthesis → critique
-                              ↑           |
-                              └─(score<7)─┘
+    Entry -> search -> (use_documents?) -> rag -> synthesis -> critique
+                          |                                  |
+                          +--------> synthesis <-------------+
+                                          ^            |
+                                          +--(score<7)-+
 
     Returns:
         Compiled StateGraph ready for execution
@@ -69,9 +85,20 @@ def build_research_graph():
     # Set entry point
     graph.set_entry_point("search")
 
-    # Add sequential edges
-    graph.add_edge("search", "rag")
+    # Conditional edge after search: skip RAG if use_documents is False
+    graph.add_conditional_edges(
+        "search",
+        should_run_rag,
+        {
+            "rag": "rag",
+            "synthesis": "synthesis",
+        },
+    )
+
+    # RAG always goes to synthesis
     graph.add_edge("rag", "synthesis")
+
+    # Synthesis goes to critique
     graph.add_edge("synthesis", "critique")
 
     # Add conditional edge from critique

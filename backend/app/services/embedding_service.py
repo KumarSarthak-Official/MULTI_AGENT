@@ -1,18 +1,17 @@
 from langchain_ollama import OllamaEmbeddings
 from app.config import settings
-import os
 
 
 class EmbeddingService:
     """Wrapper for Ollama Cloud embedding model."""
 
     def __init__(self):
-        # Set API key as environment variable
-        os.environ["OLLAMA_API_KEY"] = settings.OLLAMA_API_KEY
-
         self.embeddings = OllamaEmbeddings(
             model=settings.EMBED_MODEL,
             base_url=settings.OLLAMA_CLOUD_URL,
+            client_kwargs={
+                "headers": {"Authorization": f"Bearer {settings.OLLAMA_API_KEY}"},
+            },
         )
 
     def embed_query(self, text: str) -> list[float]:

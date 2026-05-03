@@ -25,19 +25,42 @@ class VectorStore:
     def ensure_collection(self):
         """Create collection if it doesn't exist.
 
-        Collection uses 768-dimensional vectors (nomic-embed-text) with cosine distance.
+        Dynamically checks embedding dimension to ensure compatibility.
         """
+        from app.services.embedding_service import embedding_service
+        
+        try:
+            sample = embedding_service.embed_query("test dimension")
+            current_dim = len(sample)
+            print(f"Current embedding dimension: {current_dim}")
+        except Exception as e:
+            print(f"Failed to get embedding dimension: {e}")
+            current_dim = 768  # Fallback
+
         collections = self.client.get_collections().collections
         collection_names = [c.name for c in collections]
+
+        if self.collection_name in collection_names:
+            collection_info = self.client.get_collection(self.collection_name)
+            # Access size appropriately based on the structure (params or vectors directly)
+            if hasattr(collection_info.config.params, 'vectors') and hasattr(collection_info.config.params.vectors, 'size'):
+                existing_dim = collection_info.config.params.vectors.size
+            else:
+                existing_dim = collection_info.config.params.vectors.size if hasattr(collection_info.config.params, 'vectors') else collection_info.config.params.size
+                
+            if existing_dim != current_dim:
+                print(f"Dimension mismatch (expected {current_dim}, found {existing_dim}). Recreating collection...")
+                self.client.delete_collection(self.collection_name)
+                collection_names.remove(self.collection_name)
 
         if self.collection_name not in collection_names:
             self.client.create_collection(
                 collection_name=self.collection_name,
-                vectors_config=VectorParams(size=768, distance=Distance.COSINE),
+                vectors_config=VectorParams(size=current_dim, distance=Distance.COSINE),
             )
-            print(f"Created collection: {self.collection_name}")
+            print(f"Created collection: {self.collection_name} with dim {current_dim}")
         else:
-            print(f"Collection already exists: {self.collection_name}")
+            print(f"Collection already exists: {self.collection_name} with dim {current_dim}")
 
     def query_documents(
         self,

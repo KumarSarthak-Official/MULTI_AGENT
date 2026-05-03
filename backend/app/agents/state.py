@@ -13,6 +13,9 @@ class ResearchState(TypedDict):
     # Input
     query: str
 
+    # Flags
+    use_documents: bool  # Whether to run RAG agent
+
     # Messages for LLM conversation history
     messages: Annotated[List[BaseMessage], operator.add]
 

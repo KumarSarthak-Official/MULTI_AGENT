@@ -40,7 +40,14 @@
       "Bash(uv run:*)",
       "Bash(podman:*)",
       "Bash(podman-compose:*)",
-      "Bash(uv pip:*)"
+      "Bash(uv pip:*)",
+      "mcp__playwright__browser_navigate",
+      "Bash(bunx playwright:*)",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_snapshot",
+      "Bash(taskkill /F /IM chrome.exe)",
+      "Bash(powershell.exe:*)",
+      "Bash(python3 -c ':*)"
     ]
   }
 }

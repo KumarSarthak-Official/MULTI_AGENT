@@ -10,8 +10,8 @@ def critique_agent_node(state: ResearchState) -> Dict[str, Any]:
     Process:
     1. Score draft on accuracy, completeness, citations, clarity (1-10)
     2. Provide detailed feedback
-    3. If score < 7 and iterations < 2: trigger refinement
-    4. If score >= 7 or iterations >= 2: finalize report
+    3. If score < 7 and no refinements yet: trigger one refinement cycle
+    4. If score >= 7 or refinements exhausted: finalize report
 
     Args:
         state: Current ResearchState
@@ -30,6 +30,7 @@ def critique_agent_node(state: ResearchState) -> Dict[str, Any]:
         return {
             "critique": {"score": 0, "feedback": "No draft report provided"},
             "final_report": "",
+            "iteration_count": iteration_count + 1,
             "agent_logs": agent_logs,
             "error": "No draft report to critique",
         }
@@ -67,45 +68,32 @@ Provide your evaluation with SCORE and FEEDBACK."""
         critique = {"score": score, "feedback": feedback}
 
         # Decision logic
-        if iteration_count >= 2:
-            # Max iterations reached, finalize regardless of score
+        if iteration_count >= 1:
+            # Max refinements reached (1 cycle), finalize regardless of score
             agent_logs.append(
-                f"Critique Agent: Max iterations ({iteration_count}) reached, finalizing report"
+                "Critique Agent: Max refinements reached, finalizing report"
             )
             return {
                 "critique": critique,
                 "final_report": draft_report,
+                "iteration_count": iteration_count + 1,
                 "agent_logs": agent_logs,
             }
 
         if score < 7:
-            # Check if next iteration would exceed max
-            next_iteration = iteration_count + 1
-            if next_iteration >= 2:
-                # Would exceed max iterations, finalize instead
-                agent_logs.append(
-                    f"Critique Agent: Score below threshold but next iteration would be {next_iteration}, finalizing"
-                )
-                return {
-                    "critique": critique,
-                    "final_report": draft_report,
-                    "iteration_count": next_iteration,
-                    "agent_logs": agent_logs,
-                }
-
-            # Needs refinement and under max iterations
+            # Request one refinement cycle
             agent_logs.append(
-                f"Critique Agent: Score below threshold (7), requesting refinement"
+                "Critique Agent: Score below threshold (7), requesting refinement"
             )
             return {
                 "critique": critique,
-                "iteration_count": next_iteration,
+                "iteration_count": iteration_count + 1,
                 "agent_logs": agent_logs,
             }
 
         # Score is good, finalize
         agent_logs.append(
-            f"Critique Agent: Score meets threshold, finalizing report"
+            "Critique Agent: Score meets threshold, finalizing report"
         )
         return {
             "critique": critique,
@@ -120,6 +108,7 @@ Provide your evaluation with SCORE and FEEDBACK."""
         return {
             "critique": {"score": 5, "feedback": f"Error during critique: {str(e)}"},
             "final_report": draft_report,
+            "iteration_count": iteration_count + 1,
             "agent_logs": agent_logs,
             "error": error_msg,
         }

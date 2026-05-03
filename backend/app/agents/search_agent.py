@@ -8,10 +8,10 @@ def search_agent_node(state: ResearchState) -> Dict[str, Any]:
     """Search Agent: Generates diverse queries and searches the web.
 
     Process:
-    1. Generate 3 diverse search queries from the original topic
-    2. Execute DuckDuckGo search for each query (max 5 results each)
+    1. Generate 2 diverse search queries from the original topic
+    2. Execute DuckDuckGo search for each query (max 4 results each)
     3. Deduplicate results by URL
-    4. Return max 15 unique results
+    4. Return max 10 unique results
 
     Args:
         state: Current ResearchState
@@ -24,13 +24,13 @@ def search_agent_node(state: ResearchState) -> Dict[str, Any]:
 
     try:
         # Step 1: Generate diverse queries
-        queries = llm_service.generate_queries(query, num_queries=3)
+        queries = llm_service.generate_queries(query, num_queries=2)
         agent_logs.append(f"Search Agent: Generated {len(queries)} search queries")
 
         # Step 2: Search for each query
         all_results = []
         for q in queries:
-            results = search_web(q, max_results=5)
+            results = search_web(q, max_results=4)
             all_results.extend(results)
             agent_logs.append(f"Search Agent: Found {len(results)} results for '{q}'")
 
@@ -40,8 +40,8 @@ def search_agent_node(state: ResearchState) -> Dict[str, Any]:
             f"Search Agent: Deduplicated to {len(unique_results)} unique results"
         )
 
-        # Step 4: Limit to max 15 results
-        final_results = unique_results[:15]
+        # Step 4: Limit to max 10 results
+        final_results = unique_results[:10]
         agent_logs.append(
             f"Search Agent: Returning {len(final_results)} search results"
         )

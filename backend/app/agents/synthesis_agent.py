@@ -49,11 +49,11 @@ def synthesis_agent_node(state: ResearchState) -> Dict[str, Any]:
         )
 
         # Generate report
-        system_prompt = """You are a research report writer. Generate comprehensive, well-structured reports
+        system_prompt = """You are a research report writer. Generate concise, well-structured reports
 that synthesize information from multiple sources. Use markdown formatting with clear sections.
-Always cite sources with [1], [2], etc. and include a Sources section at the end."""
+Always cite sources with [1], [2], etc. Keep the report focused and actionable."""
 
-        prompt = f"""Generate a comprehensive research report on the following topic:
+        prompt = f"""Generate a concise research report on the following topic:
 
 Topic: {query}
 
@@ -63,25 +63,25 @@ Web Sources:
 Document Sources:
 {doc_context}
 
-Generate a report with these sections:
+Generate a focused report with these sections:
 # {query}
 
 ## Executive Summary
 [2-3 sentences summarizing key findings]
 
 ## Key Findings
-[Bullet points of main discoveries]
+[3-5 bullet points of main discoveries with citations]
 
-## Detailed Analysis
-[In-depth analysis with citations]
+## Analysis
+[Concise analysis with citations - 2-3 paragraphs maximum]
 
 ## Conclusion
-[Summary and implications]
+[Brief summary and implications - 1 paragraph]
 
 ## Sources
 [Numbered list of all sources cited]
 
-Use inline citations like [1], [2] throughout the report."""
+Keep the report concise but comprehensive. Use inline citations like [1], [2] throughout."""
 
         # Add refinement context if this is a revision
         if iteration_count > 0:

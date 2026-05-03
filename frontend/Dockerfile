@@ -20,7 +20,7 @@ FROM oven/bun:1-slim
 
 WORKDIR /app
 
-# Copy built application
+# Copy built application from standalone output
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
@@ -28,5 +28,5 @@ COPY --from=builder /app/public ./public
 # Expose port
 EXPOSE 3000
 
-# Run application
-CMD ["bun", "run", "start"]
+# Run the standalone server
+CMD ["bun", "server.js"]

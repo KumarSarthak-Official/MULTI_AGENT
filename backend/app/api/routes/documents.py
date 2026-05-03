@@ -32,6 +32,12 @@ async def upload_document(
         raise HTTPException(
             status_code=400, detail="Only PDF files are supported"
         )
+        
+    # Optional file size limit check using file object length
+    if getattr(file, 'size', 0) > 10 * 1024 * 1024:  # 10MB limit
+        raise HTTPException(
+            status_code=413, detail="File too large (max 10MB)"
+        )
 
     try:
         # Read file content
@@ -67,6 +73,8 @@ async def upload_document(
     except HTTPException:
         raise
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=500, detail=f"Error processing document: {str(e)}"
         )

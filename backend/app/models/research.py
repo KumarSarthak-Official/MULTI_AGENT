@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Float, DateTime, Text, ForeignKey, JSON
+from sqlalchemy import Column, String, Integer, Float, DateTime, Text, ForeignKey, JSON, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.models.database import Base
@@ -15,7 +15,7 @@ class Research(Base):
 
     # Request details
     query = Column(Text, nullable=False)
-    use_documents = Column(Integer, default=1)  # Boolean as int for SQLite compatibility
+    use_documents = Column(Boolean, default=True)
 
     # Status tracking
     status = Column(String, default="pending", index=True)  # pending, running, completed, failed

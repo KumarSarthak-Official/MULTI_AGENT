@@ -2,7 +2,6 @@ from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, SystemMessage
 from app.config import settings
 from app.services.cache_service import cache_service
-import os
 import hashlib
 
 
@@ -10,19 +9,20 @@ class LLMService:
     """Wrapper for Ollama Cloud LLM interactions with caching."""
 
     def __init__(self):
-        # Set API key as environment variable for langchain-ollama
-        os.environ["OLLAMA_API_KEY"] = settings.OLLAMA_API_KEY
-
         self.llm = ChatOllama(
             model=settings.LLM_MODEL,
             base_url=settings.OLLAMA_CLOUD_URL,
-            temperature=0.7,
+            client_kwargs={
+                "headers": {"Authorization": f"Bearer {settings.OLLAMA_API_KEY}"},
+            },
+            temperature=0.3,  # Lower for faster, more focused responses
+            timeout=30,  # 30 second timeout per LLM call
         )
 
     def _generate_cache_key(self, prompt: str, system_prompt: str = None) -> str:
         """Generate cache key from prompt."""
         content = f"{system_prompt or ''}:{prompt}:{settings.LLM_MODEL}"
-        return f"llm:{hashlib.md5(content.encode()).hexdigest()}"
+        return f"llm:{hashlib.sha256(content.encode()).hexdigest()}"
 
     def generate(self, prompt: str, system_prompt: str = None, use_cache: bool = True) -> str:
         """Generate text from a prompt with optional caching.
@@ -57,12 +57,12 @@ class LLMService:
 
         return result
 
-    def generate_queries(self, topic: str, num_queries: int = 3) -> list[str]:
+    def generate_queries(self, topic: str, num_queries: int = 2) -> list[str]:
         """Generate diverse search queries for a research topic.
 
         Args:
             topic: Research topic
-            num_queries: Number of queries to generate (default 3)
+            num_queries: Number of queries to generate (default 2)
 
         Returns:
             List of search query strings
@@ -76,7 +76,7 @@ Topic: {topic}
 
 Return ONLY the queries, one per line, without numbering or explanation."""
 
-        response = self.generate(prompt, system_prompt)
+        response = self.generate(prompt, system_prompt, use_cache=False)
         queries = [q.strip() for q in response.strip().split("\n") if q.strip()]
         return queries[:num_queries]
 
