@@ -1,32 +1,43 @@
 # Python
 __pycache__/
 *.py[cod]
+*.pyo
 .venv/
 *.egg-info/
 .pytest_cache/
 .coverage
+.python-version
 
-# Node/Bun
+# Node / Bun
 node_modules/
 .next/
 out/
 *.log
 
-# Environment
+# Environment — NEVER commit real secrets
 .env
 .env.local
+backend/.env
+
+# Build artifacts
+dist/
+build/
 
 # IDEs
 .vscode/
 .idea/
 *.swp
+.claude/
 
 # OS
 .DS_Store
 Thumbs.db
 
 # Docker
-*.log
-
-# Qdrant data
 qdrant_storage/
+
+# Scratch / debug scripts
+scratch/
+
+# Internal AI/editor config
+CLAUDE.md

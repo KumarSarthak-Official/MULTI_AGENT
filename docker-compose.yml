@@ -53,8 +53,10 @@ services:
       - QDRANT_URL=http://qdrant:6333
       - OLLAMA_CLOUD_URL=${OLLAMA_CLOUD_URL}
       - OLLAMA_API_KEY=${OLLAMA_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - LLM_MODEL=${LLM_MODEL}
       - EMBED_MODEL=${EMBED_MODEL}
+      - GEMINI_EMBED_MODEL=${GEMINI_EMBED_MODEL}
       - CORS_ORIGINS=http://localhost:3000
     depends_on:
       postgres:

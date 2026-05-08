@@ -3,24 +3,53 @@ from qdrant_client.models import Distance, VectorParams, PointStruct
 from app.config import settings
 from typing import List, Dict, Optional
 import uuid
+import time
+
+
+# Batch size for upserts — keeps individual payloads small
+_UPSERT_BATCH_SIZE = 50
+# Retry settings for transient network errors
+_MAX_RETRIES = 3
+_RETRY_BACKOFF = 2.0  # seconds; doubles each attempt
 
 
 class VectorStore:
     """Qdrant vector store operations with support for both local and cloud."""
 
     def __init__(self):
+        self.connected = False
         # Support both local Qdrant and Qdrant Cloud
         if settings.QDRANT_API_KEY:
             # Qdrant Cloud with API key authentication
             self.client = QdrantClient(
                 url=settings.QDRANT_URL,
                 api_key=settings.QDRANT_API_KEY,
+                timeout=30,
             )
         else:
             # Local Qdrant without authentication
-            self.client = QdrantClient(url=settings.QDRANT_URL)
+            self.client = QdrantClient(url=settings.QDRANT_URL, timeout=30)
 
         self.collection_name = "research_docs"
+
+    def _upsert_with_retry(self, points: List[PointStruct]) -> None:
+        """Upsert a batch of points with retry/backoff on transient errors."""
+        delay = _RETRY_BACKOFF
+        for attempt in range(1, _MAX_RETRIES + 1):
+            try:
+                self.client.upsert(
+                    collection_name=self.collection_name, points=points
+                )
+                return
+            except Exception as e:
+                if attempt == _MAX_RETRIES:
+                    raise
+                print(
+                    f"  Qdrant upsert attempt {attempt} failed ({e}), "
+                    f"retrying in {delay:.0f}s..."
+                )
+                time.sleep(delay)
+                delay *= 2
 
     def ensure_collection(self):
         """Create collection if it doesn't exist.
@@ -61,6 +90,8 @@ class VectorStore:
             print(f"Created collection: {self.collection_name} with dim {current_dim}")
         else:
             print(f"Collection already exists: {self.collection_name} with dim {current_dim}")
+
+        self.connected = True
 
     def query_documents(
         self,
@@ -126,11 +157,19 @@ class VectorStore:
         Returns:
             Number of chunks inserted
         """
+        if not self.connected:
+            raise ConnectionError(
+                "Qdrant is not connected. Check your QDRANT_URL and QDRANT_API_KEY."
+            )
+
         if not texts or not embeddings:
             return 0
 
         if len(texts) != len(embeddings):
-            raise ValueError("texts and embeddings must have same length")
+            raise ValueError(
+                f"texts and embeddings must have same length "
+                f"(got {len(texts)} texts, {len(embeddings)} embeddings)"
+            )
 
         points = []
         for i, (text, embedding) in enumerate(zip(texts, embeddings)):
@@ -149,8 +188,16 @@ class VectorStore:
                 )
             )
 
-        self.client.upsert(collection_name=self.collection_name, points=points)
-        return len(points)
+        # Upsert in batches to avoid large payloads and handle network drops
+        total = len(points)
+        for i in range(0, total, _UPSERT_BATCH_SIZE):
+            batch = points[i : i + _UPSERT_BATCH_SIZE]
+            print(f"  Upserting batch {i // _UPSERT_BATCH_SIZE + 1}/"
+                  f"{(total + _UPSERT_BATCH_SIZE - 1) // _UPSERT_BATCH_SIZE} "
+                  f"({len(batch)} points)...")
+            self._upsert_with_retry(batch)
+
+        return total
 
 
 # Singleton instance

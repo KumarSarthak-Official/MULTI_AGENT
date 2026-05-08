@@ -14,13 +14,16 @@ class Settings(BaseSettings):
     QDRANT_URL: str = "http://localhost:6333"
     QDRANT_API_KEY: str = ""  # Optional for local, required for Qdrant Cloud
 
-    # Ollama Cloud
+    # Ollama Cloud (for LLM / research agents)
     OLLAMA_CLOUD_URL: str = "https://api.ollama.com"
     OLLAMA_API_KEY: str
 
-    # Models
-    LLM_MODEL: str = "deepseek-v3.2"
-    EMBED_MODEL: str = "nomic-embed-text"
+    # Google Gemini (for RAG embeddings - free tier)
+    GOOGLE_API_KEY: str = ""
+    GEMINI_EMBED_MODEL: str = "gemini-embedding-2-preview"
+
+    # Models (Ollama cloud model for LLM tasks)
+    LLM_MODEL: str = "deepseek-v4-pro:cloud"
 
     # API
     CORS_ORIGINS: str = "http://localhost:3000"

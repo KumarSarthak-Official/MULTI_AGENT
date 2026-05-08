@@ -51,8 +51,23 @@ async def upload_document(
                 status_code=400, detail="No text content found in PDF"
             )
 
+        # Filter out empty / whitespace-only chunks that can cause
+        # the embedding API to return fewer vectors than expected
+        filtered = [
+            (t, m) for t, m in zip(texts, metadata) if t and t.strip()
+        ]
+        if not filtered:
+            raise HTTPException(
+                status_code=400, detail="No text content found in PDF after filtering"
+            )
+        texts, metadata = zip(*filtered)
+        texts, metadata = list(texts), list(metadata)
+
+        print(f"Document '{source_name}': {len(texts)} chunks after filtering")
+
         # Generate embeddings
         embeddings = embedding_service.embed_documents(texts)
+        print(f"Generated {len(embeddings)} embeddings for {len(texts)} chunks")
 
         # Upsert to Qdrant
         chunks_ingested = vector_store.upsert_documents(
