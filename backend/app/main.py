@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from app.config import settings
 from app.tools.vector_store import vector_store
 from app.api.routes import health, research, documents
+from app.api.eval_router import router as eval_router
 from app.limiter import limiter
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -52,6 +53,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.include_router(health.router, prefix="/api/v1", tags=["health"])
 app.include_router(research.router, prefix="/api/v1", tags=["research"])
 app.include_router(documents.router, prefix="/api/v1", tags=["documents"])
+app.include_router(eval_router, prefix="/api/v1", tags=["evaluation"])
 
 
 @app.get("/")

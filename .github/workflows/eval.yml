@@ -1,0 +1,52 @@
+name: RAGAS Evaluation Gate
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  evaluate:
+    name: Run RAGAS quality gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync
+
+      - name: Run RAGAS evaluation (CI mode — fails on threshold breach)
+        working-directory: backend
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          QDRANT_URL: ${{ secrets.QDRANT_URL }}
+          QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
+          OLLAMA_CLOUD_URL: ${{ secrets.OLLAMA_CLOUD_URL }}
+          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: redis://localhost:6379
+          LLM_MODEL: gemma4:31b-cloud
+          CORS_ORIGINS: http://localhost:3000
+        run: uv run python -m app.evaluation.run_eval --ci
+
+      - name: Upload evaluation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ragas-report
+          path: |
+            backend/app/evaluation/reports/latest_eval.csv
+            backend/app/evaluation/reports/summary.json
+          retention-days: 30
