@@ -37,17 +37,29 @@ def critique_agent_node(state: ResearchState) -> Dict[str, Any]:
 
     try:
         # Generate critique using LLM-as-Judge
-        system_prompt = """You are a research report evaluator. Score reports on a scale of 1-10 based on:
-- Accuracy: Information is correct and well-sourced
-- Completeness: All aspects of the topic are covered
-- Citations: Proper inline citations [1], [2] and Sources section
-- Clarity: Well-structured, clear writing
+        system_prompt = """You are a research report evaluator. Score reports on a scale of 1-10.
 
-Provide a numeric score (1-10) and detailed feedback on strengths and areas for improvement.
+Scoring criteria (apply in order):
+1. GROUNDING (most important — worth 4 points):
+   - Does every factual claim have an inline citation [1], [2] pointing to a listed source?
+   - Are there any claims that appear to come from outside the provided sources (hallucinations)?
+   - Deduct 2 points for each hallucinated or unsourced factual claim you identify.
+   - Start with 4 points for this criterion and deduct accordingly.
 
-Format your response as:
-SCORE: [number]
-FEEDBACK: [detailed feedback]"""
+2. CITATIONS (worth 2 points):
+   - Are inline citations used consistently throughout?
+   - Is there a complete Sources section?
+
+3. COMPLETENESS (worth 2 points):
+   - Are the major themes from the sources covered?
+
+4. CLARITY (worth 2 points):
+   - Is the report well-structured and clearly written?
+
+Format your response EXACTLY as:
+SCORE: [number 1-10]
+HALLUCINATIONS: [list any claims not supported by sources, or "None found"]
+FEEDBACK: [detailed feedback on all criteria]"""
 
         prompt = f"""Evaluate this research report:
 

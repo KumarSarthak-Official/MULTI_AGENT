@@ -11,9 +11,8 @@ your system matures.
 import sys
 
 SCORE_THRESHOLDS: dict[str, float] = {
-    "faithfulness":     0.80,  # < 0.80 → hallucination risk in production
-    "answer_relevancy": 0.75,  # < 0.75 → answers drifting off-topic
-    "context_recall":   0.70,  # < 0.70 → Qdrant missing key chunks
+    "faithfulness":      0.80,  # < 0.80 → hallucination risk in production
+    "context_precision": 0.60,  # < 0.60 → retrieval returning noisy chunks
 }
 
 

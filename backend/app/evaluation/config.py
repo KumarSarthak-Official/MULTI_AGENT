@@ -1,53 +1,57 @@
 """
 RAGAS Evaluation Configuration
 ================================
-Reuses the existing GOOGLE_API_KEY from backend/.env.
-Gemini Flash is used as the evaluator LLM and embedding model —
-no additional API costs beyond what the main system already uses.
+Uses NVIDIA NIM API for both the evaluator LLM and embeddings.
+
+LLM:        nvidia/nemotron-3-super-120b-a12b  (Nemotron 3 Super)
+Embeddings: nvidia/llama-nemotron-embed-1b-v2   (NVIDIA's dedicated embed model)
+
+Both are accessed via NVIDIA's OpenAI-compatible endpoint:
+    https://integrate.api.nvidia.com/v1
+
+The NVIDIA_API_KEY is stored in backend/.env.
+Fallback: Gemini embeddings are kept if NVIDIA embeddings ever fail.
 """
 
 import os
 from dotenv import load_dotenv
 from ragas.llms import LangchainLLMWrapper
 from ragas.embeddings import LangchainEmbeddingsWrapper
-from langchain_google_genai import GoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
-# Load .env from the backend root (works whether running inside or outside the container)
 load_dotenv()
 
-_api_key = os.getenv("GOOGLE_API_KEY")
-if not _api_key:
+_nvidia_key = os.getenv("NVIDIA_API_KEY")
+if not _nvidia_key:
     raise EnvironmentError(
-        "GOOGLE_API_KEY is not set. "
-        "Add it to backend/.env before running evaluation."
+        "NVIDIA_API_KEY is not set. Add it to backend/.env"
     )
 
-# ---------------------------------------------------------------------------
-# Evaluator LLM — Gemini 1.5 Flash (generous free-tier quota)
-# Switch to gemini-2.0-flash if you have a paid plan or when quota resets.
-#
-# QUOTA NOTE: The free tier for gemini-2.0-flash allows ~50 RPD.
-# If you see 429 RESOURCE_EXHAUSTED errors:
-#   1. Wait until midnight PST (daily quota resets)
-#   2. OR upgrade to a Gemini paid plan at https://aistudio.google.com
-#   3. OR change the model below to "gemini-1.5-flash" (separate quota bucket)
-# ---------------------------------------------------------------------------
-_EVAL_MODEL = "gemini-2.0-flash"
+_NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
+# ---------------------------------------------------------------------------
+# Evaluator LLM — Nemotron Nano 8B (fast, fits NVIDIA's 120s server timeout)
+# The 120B Super model is too slow for RAGAS's multi-step LLM-as-judge prompts.
+# Nano 8B responds in 2-5s per request vs 90-120s for the 120B Super model.
+# Switch back to nemotron-3-super-120b-a12b after NVIDIA increases timeout limits.
+# ---------------------------------------------------------------------------
 eval_llm = LangchainLLMWrapper(
-    GoogleGenerativeAI(
-        model=_EVAL_MODEL,
-        google_api_key=_api_key,
-        temperature=0,  # deterministic scoring
+    ChatOpenAI(
+        model="nvidia/llama-3.1-nemotron-nano-8b-v1",
+        base_url=_NVIDIA_BASE_URL,
+        api_key=_nvidia_key,
+        temperature=0,
     )
 )
 
 # ---------------------------------------------------------------------------
-# Evaluator Embeddings — text-embedding-004 (stable free-tier model)
+# Evaluator Embeddings — NVIDIA llama-nemotron-embed-1b-v2
+# Dedicated embedding model available on the same NIM endpoint.
 # ---------------------------------------------------------------------------
 eval_embeddings = LangchainEmbeddingsWrapper(
-    GoogleGenerativeAIEmbeddings(
-        model="models/text-embedding-004",
-        google_api_key=_api_key,
+    OpenAIEmbeddings(
+        model="nvidia/llama-nemotron-embed-1b-v2",
+        base_url=_NVIDIA_BASE_URL,
+        api_key=_nvidia_key,
     )
 )

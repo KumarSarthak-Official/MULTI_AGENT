@@ -40,7 +40,7 @@ def synthesis_agent_node(state: ResearchState) -> Dict[str, Any]:
 
     try:
         # Prepare context from sources
-        web_context = prepare_web_context(search_results)
+        web_context = prepare_web_context(search_results[:5])  # cap at 5 to reduce noise
         doc_context = prepare_doc_context(rag_context)
 
         agent_logs.append(
@@ -49,11 +49,24 @@ def synthesis_agent_node(state: ResearchState) -> Dict[str, Any]:
         )
 
         # Generate report
-        system_prompt = """You are a research report writer. Generate concise, well-structured reports
-that synthesize information from multiple sources. Use markdown formatting with clear sections.
-Always cite sources with [1], [2], etc. Keep the report focused and actionable."""
+        system_prompt = """You are a research report writer. Your ONLY job is to synthesize the
+provided sources into a structured report. Follow these STRICT rules:
 
-        prompt = f"""Generate a concise research report on the following topic:
+GROUNDING RULES (non-negotiable):
+- ONLY include facts that are EXPLICITLY stated word-for-word or paraphrased from the sources.
+- Do NOT expand, infer, or extrapolate beyond what the sources literally say.
+- Web snippets are short — do not add context around them. Report only what is in the snippet.
+- Do NOT add any information from your own training data, general knowledge, or assumptions.
+- If a section cannot be answered from the provided sources, write "Insufficient source data."
+- Every factual claim MUST have an inline citation [1], [2], etc. referencing a listed source.
+- Keep each section SHORT — one sentence per source reference is enough.
+
+FORMAT RULES:
+- Use markdown with clear sections.
+- Keep the entire report under 400 words. Brevity improves grounding."""
+
+        prompt = f"""Generate a research report STRICTLY based on the sources below.
+Do NOT add any information not present in these sources.
 
 Topic: {query}
 
@@ -67,21 +80,21 @@ Generate a focused report with these sections:
 # {query}
 
 ## Executive Summary
-[2-3 sentences summarizing key findings]
+[2-3 sentences summarizing key findings FROM THE SOURCES ONLY]
 
 ## Key Findings
-[3-5 bullet points of main discoveries with citations]
+[3-5 bullet points with citations — ONLY facts explicitly in the sources above]
 
 ## Analysis
-[Concise analysis with citations - 2-3 paragraphs maximum]
+[2-3 paragraphs with citations — ONLY draw from the sources above]
 
 ## Conclusion
-[Brief summary and implications - 1 paragraph]
+[1 paragraph — ONLY conclusions supported by the sources above]
 
 ## Sources
 [Numbered list of all sources cited]
 
-Keep the report concise but comprehensive. Use inline citations like [1], [2] throughout."""
+REMINDER: Do not invent or assume any facts. Cite every claim."""
 
         # Add refinement context if this is a revision
         if iteration_count > 0:

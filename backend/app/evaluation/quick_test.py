@@ -78,7 +78,7 @@ async def main():
         embeddings=eval_embeddings,
         show_progress=True,
         raise_exceptions=False,
-        run_config=RunConfig(timeout=120, max_retries=2, max_wait=60),
+        run_config=RunConfig(timeout=300, max_retries=2, max_wait=30),
     )
 
     summary = {m.name: _safe_float(results[m.name]) for m in CORE_METRICS}

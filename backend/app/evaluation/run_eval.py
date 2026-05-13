@@ -83,32 +83,56 @@ async def run_full_evaluation(
     # ── 2. Convert to RAGAS EvaluationDataset ───────────────────────────────
     eval_dataset = EvaluationDataset.from_hf_dataset(hf_dataset)
 
-    # ── 3. Run RAGAS evaluate ────────────────────────────────────────────────
-    print(f"\n📊  Evaluating {len(hf_dataset)} samples with RAGAS …")
-    results = evaluate(
-        dataset=eval_dataset,
-        metrics=CORE_METRICS,
-        llm=eval_llm,
-        embeddings=eval_embeddings,
-        show_progress=True,
-        raise_exceptions=False,
-        run_config=RunConfig(timeout=120, max_retries=2, max_wait=60),
-    )
+    # ── 3. Run RAGAS evaluate — one metric at a time to avoid rate limits ────
+    # Firing all metrics at once = 15 concurrent API calls → NVIDIA 429 errors.
+    # Running sequentially = 5 calls per metric, with a pause between batches.
+    import time
+
+    run_cfg = RunConfig(timeout=120, max_retries=3, max_wait=30)
+    combined_df = None
+    summary: dict[str, float] = {}
+
+    for i, metric in enumerate(CORE_METRICS):
+        print(f"\n📊  [{i+1}/{len(CORE_METRICS)}] Evaluating metric: {metric.name} …")
+        try:
+            result = evaluate(
+                dataset=eval_dataset,
+                metrics=[metric],
+                llm=eval_llm,
+                embeddings=eval_embeddings,
+                show_progress=True,
+                raise_exceptions=False,
+                run_config=run_cfg,
+            )
+            metric_df = result.to_pandas()
+            summary[metric.name] = _safe_float(result[metric.name])
+            print(f"   → {metric.name}: {summary[metric.name]}")
+
+            if combined_df is None:
+                combined_df = metric_df
+            else:
+                # Merge the new metric column into the combined dataframe
+                combined_df[metric.name] = metric_df[metric.name].values
+
+        except Exception as e:
+            print(f"   ⚠️  {metric.name} failed: {e}")
+            summary[metric.name] = None
+
+        # Pause between metrics to respect NVIDIA's rate limit
+        if i < len(CORE_METRICS) - 1:
+            print("   ⏳ Pausing 8s before next metric …")
+            time.sleep(8)
 
     # ── 4. Save per-sample CSV ───────────────────────────────────────────────
-    df = results.to_pandas()
     csv_path = REPORTS_DIR / "latest_eval.csv"
-    df.to_csv(csv_path, index=False)
+    if combined_df is not None:
+        combined_df.to_csv(csv_path, index=False)
     print(f"\n📁  Per-sample results saved → {csv_path}")
 
-    # ── 5. Build summary ─────────────────────────────────────────────────────
-    summary: dict[str, float] = {}
-    for metric in CORE_METRICS:
-        key = metric.name
-        summary[key] = _safe_float(results[key])
-
+    # ── 5. Save summary ──────────────────────────────────────────────────────
     summary_path = REPORTS_DIR / "summary.json"
     summary_path.write_text(json.dumps(summary, indent=2))
+
     print(f"📁  Summary saved → {summary_path}")
 
     # ── 6. Print results ─────────────────────────────────────────────────────

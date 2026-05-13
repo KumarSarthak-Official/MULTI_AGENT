@@ -31,8 +31,8 @@ def rag_agent_node(state: ResearchState) -> Dict[str, Any]:
         agent_logs.append("RAG Agent: Querying vector store")
         documents = vector_store.query_documents(
             query_vector=query_vector,
-            limit=6,  # Reduced from 10 to 6
-            score_threshold=0.5,
+            limit=8,              # fetch more candidates to pick best 3 from
+            score_threshold=0.6,  # stricter relevance floor (was 0.5)
         )
 
         # Handle empty collection
@@ -49,7 +49,7 @@ def rag_agent_node(state: ResearchState) -> Dict[str, Any]:
         agent_logs.append("RAG Agent: Using vector similarity scores")
 
         # Documents are already sorted by score from Qdrant
-        top_docs = documents[:4]  # Keep top 4 instead of 6
+        top_docs = documents[:3]  # top 3 high-precision chunks (was 4)
         agent_logs.append(f"RAG Agent: Returning top {len(top_docs)} documents")
 
         return {

@@ -26,11 +26,11 @@ from app.services.embedding_service import embedding_service
 # Tune these to reflect your domain (research papers, tech docs, etc.).
 # --------------------------------------------------------------------------
 SEED_QUESTIONS = [
-    "What are the key findings in the uploaded research document?",
-    "Summarize the methodology section of the paper.",
-    "What limitations does the author mention?",
-    "Compare the results from different sections of the document.",
-    "What future work does the paper recommend?",
+    "What is retrieval-augmented generation and how does it work?",
+    "What is the methodology used in RAG systems?",
+    "What are the limitations of RAG systems?",
+    "How does RAG compare to standard language models in terms of accuracy?",
+    "What future improvements are recommended for RAG pipelines?",
 ]
 
 
@@ -95,19 +95,41 @@ async def build_synthetic_dataset(
             )
 
             response = state.get("final_report") or state.get("draft_report") or ""
-            # Pull contexts independently to guarantee they are captured even
-            # when the pipeline short-circuits (e.g., use_documents=False)
-            contexts = _retrieve_contexts(q)
 
-            # Fall back to what the rag_agent actually retrieved if Qdrant is live
-            if not contexts and state.get("rag_context"):
-                contexts = [c.get("text", "") for c in state["rag_context"] if c.get("text")]
+            # ── Collect ALL context the synthesis agent actually used ──────
+            # 1. RAG chunks from Qdrant
+            rag_contexts: list[str] = []
+            if state.get("rag_context"):
+                rag_contexts = [
+                    c.get("text", "")
+                    for c in state["rag_context"]
+                    if c.get("text")
+                ]
+
+            # Fallback: re-query Qdrant directly if pipeline state is empty
+            if not rag_contexts:
+                rag_contexts = _retrieve_contexts(q)
+
+            # 2. Web search snippets — these are ALSO given to the synthesis
+            #    agent, so RAGAS must see them to correctly judge faithfulness.
+            web_contexts: list[str] = []
+            if state.get("search_results"):
+                web_contexts = [
+                    f"[Web] {r.get('title', '')}: {r.get('snippet', '')}"
+                    for r in state["search_results"]
+                    if r.get("snippet")
+                ]
+
+            # Combine: RAG first (primary), web second (supplementary)
+            all_contexts = rag_contexts + web_contexts
+            if not all_contexts:
+                all_contexts = ["No context retrieved"]
 
             samples.append(
                 {
                     "user_input": q,
                     "response": response,
-                    "retrieved_contexts": contexts or ["No context retrieved"],
+                    "retrieved_contexts": all_contexts,
                     "reference": "",  # fill in ground-truth later if available
                 }
             )
